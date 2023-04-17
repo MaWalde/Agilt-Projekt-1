@@ -21,6 +21,7 @@ namespace ConsoleApp1
                         Console.SetCursorPosition(x, y);
                         Console.Write("X");
                     }
+                    else if (y == 10 && x == 25) Console.Write(">");
                     else if (y == 10 && x > 20 && x < 25)
                     {
                         Console.SetCursorPosition(x, y);
