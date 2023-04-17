@@ -33,7 +33,46 @@ namespace ConsoleApp1
                     }
                 }
             }
+
+            List<List<string>> list = new List<List<string>>();
+            string[] arr1 = { "Test", "Foo", "Bar" };
+            string[] arr2 = { "123", "Något", "Jag" };
+            string[] arr3 = { "321", "Togån", "Gaj" };
+            list.Add(arr1.ToList());
+            list.Add(arr2.ToList());
+            list.Add(arr3.ToList());
+
+            Console.WriteLine();
+
+            int spacing = 3;
+
+            int[] maxColumnWidths = CulcColumnWidths(list);
+            foreach (List<string> str in list)
+            {
+                for (int i = 0; i < str.Count; i++)
+                {
+                    Console.Write("{0, -" + (maxColumnWidths[i] + spacing) + "}", str[i]);
+                }
+                Console.WriteLine();
+            }
         }
 
+        static int[] CulcColumnWidths(List<List<string>> table)
+        {
+            int[] maxColumnWidths = new int[table[0].Count];
+
+            foreach (List<string> row in table)
+            {
+                for (int i = 0; i < row.Count; i++)
+                {
+                    int columnWidth = row[i].Length;
+                    if (columnWidth > maxColumnWidths[i])
+                    {
+                        maxColumnWidths[i] = columnWidth;
+                    }
+                }
+            }
+            return maxColumnWidths;
+        }
     }
 }
