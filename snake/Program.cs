@@ -36,9 +36,9 @@ namespace ConsoleApp1
             }
 
             List<List<string>> list = new List<List<string>>();
-            string[] arr1 = { "Test", "Foo", "Bar" };
-            string[] arr2 = { "123", "Något", "Jag" };
-            string[] arr3 = { "321", "Togån", "Gaj" };
+            string[] arr1 = { "Score", "Namn", "Date" };
+            string[] arr2 = { "123", "Något", DateTime.Now.ToString("yyyy-MM-dd HH:mm") };
+            string[] arr3 = { "321", "Togån", new DateTime(2008, 11, 1, 12, 11, 03).ToString("yyyy-MM-dd HH:mm") };
             list.Add(arr1.ToList());
             list.Add(arr2.ToList());
             list.Add(arr3.ToList());
