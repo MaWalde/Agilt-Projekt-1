@@ -1,3 +1,7 @@
+using System.ComponentModel.DataAnnotations;
+using System.Text;
+using System.Text.Json;
+
 namespace Snake
 {
     /// <summary>
@@ -42,7 +46,6 @@ namespace Snake
         /// <summary>
         /// Spelets hastighet
         /// </summary>
-        //Tog bort readonly så att man kan öka hastigheten med increaseLevel
         static int speed = 100; // TBD: Bör vara en double så man kan fininställa hastighet
         /// <summary>
         /// Om rutnätet är befolkat med objekt eller inte.
@@ -84,7 +87,8 @@ namespace Snake
 
             if (selectedIndex < 0)
             {
-                Environment.Exit(0);
+                EditSave(Editor());
+                Main(args);
             }
 
             // FIXME: Om man trycker på ecape i menyn kastas IndexOutOfRangeException
@@ -102,9 +106,13 @@ namespace Snake
             }
             else if (command == options[2])
             {
-                Console.WriteLine("Load: NYI"); // NYI: Implementera Load funktionen
-                Thread.Sleep(3000);
-                Main(args);
+                Console.Write("Filename: ");
+                string fileName = Console.ReadLine();
+                grid = LoadFromFile(fileName);
+                SetGameVariables();
+                Populated = true;
+
+                Start();
             }
             else if (command == options[3])
             {
@@ -130,23 +138,28 @@ namespace Snake
         {
             if (!Populated)
             {
-                points = 0;
-                FoodCount = 0;
-                BombCount = 0;
-                snakeLength = 5;
-                speed = 100;
-                level = 1;
                 populateGrid();
-                currentCell = grid[(int)Math.Ceiling((double)gridH / 2), (int)Math.Ceiling((double)gridW / 2)];
-                updatePos();
-                addFood();
-                Populated = true;
+                SetGameVariables();
             }
 
             while (!Lost)
             {
                 Restart();
             }
+        }
+
+        private static void SetGameVariables()
+        {
+            points = 0;
+            FoodCount = 0;
+            BombCount = 0;
+            snakeLength = 5;
+            speed = 100;
+            level = 1;
+            currentCell = grid[(int)Math.Ceiling((double)gridH / 2), (int)Math.Ceiling((double)gridW / 2)];
+            updatePos();
+            addFood();
+            Populated = true;
         }
 
         static void Restart()
@@ -683,9 +696,14 @@ namespace Snake
                     cell.y = col;
                     cell.visited = false;
                     if (cell.x == 0 || cell.x > gridW - 2 || cell.y == 0 || cell.y > gridH - 2)
+                    {
                         cell.Set("*");
+                    } 
                     else
+                    {
                         cell.Clear();
+                    }
+
                     grid[col, row] = cell;
                 }
             }
@@ -761,6 +779,153 @@ namespace Snake
             }
         }
 
+        /// <summary>
+        /// En editor för nya arenor för spelet
+        /// </summary>
+        /// <returns>EReturnerar ett Cell object</returns>
+        public static Cell[,] Editor()
+        {
+            Cell[,] editGrid = new Cell[gridH, gridW];
+
+            for (int col = 0; col < gridH; col++)
+            {
+                for (int row = 0; row < gridW; row++)
+                {
+                    Cell cell = new Cell();
+                    cell.x = row;
+                    cell.y = col;
+                    cell.visited = false;
+                    if (cell.x == 0 || cell.x > gridW - 2 || cell.y == 0 || cell.y > gridH - 2)
+                    {
+                        cell.Set("*");
+                    }
+
+                    else
+                    {
+                        cell.Clear();
+                    }
+
+                    editGrid[col, row] = cell;
+                }
+            }
+
+
+            int x = 1;
+            int y = 1;
+
+            Console.Clear();
+            drawGrid(editGrid, x, y);
+
+            while (true)
+            {
+                ConsoleKeyInfo keyInfo = Console.ReadKey(true);
+                if (keyInfo.Key == ConsoleKey.UpArrow)
+                {
+                    y = Math.Max(0, y - 1);
+                }
+                else if (keyInfo.Key == ConsoleKey.DownArrow)
+                {
+                    y = Math.Min(gridH - 1, y + 1);
+                }
+                else if (keyInfo.Key == ConsoleKey.LeftArrow)
+                {
+                    x = Math.Max(0, x - 1);
+                }
+                else if (keyInfo.Key == ConsoleKey.RightArrow)
+                {
+                    x = Math.Min(gridW - 1, x + 1);
+                }
+                else if (keyInfo.Key == ConsoleKey.Spacebar)
+                {
+                    if (editGrid[y, x].val == "*") editGrid[y, x].val = " ";
+                    else editGrid[y, x].val = "*";
+                }
+                else if (keyInfo.Key == ConsoleKey.Enter)
+                {
+                    return editGrid;
+                }
+
+                Console.Clear();
+                drawGrid(editGrid, x, y);
+            }
+        }
+
+        /// <summary>
+        /// Skriver ut editorn
+        /// </summary>
+        /// <param name="editGrid">Dell objekt</param>
+        /// <param name="x">Vilken rad som ska ändras</param>
+        /// <param name="y">Vilken kolumn som ska ändras</param>
+        static void drawGrid(Cell[,] editGrid, int x, int y)
+        {
+            string toPrint = "";
+            for (int col = 0; col < gridH; col++)
+            {
+                for (int row = 0; row < gridW; row++)
+                {
+                    if (col == y && row == x)
+                    {
+                        toPrint += "+";
+                    }
+                    else
+                    {
+                        toPrint += editGrid[col, row].val;
+                    }
+
+                }
+                toPrint += "\n";
+            }
+            Console.WriteLine(toPrint);
+            Console.WriteLine("Move with arrow keys");
+            Console.WriteLine("Spacebar = add wall");
+            Console.WriteLine("Enter to save");
+        }
+
+        /// <summary>
+        /// Spara den ändrade Cell objektet i en text fil
+        /// </summary>
+        /// <param name="editGrid">Cell objekt</param>
+        static void EditSave(Cell[,] editGrid)
+        {
+            Console.Write("Filename: ");
+            string fileName = Console.ReadLine();
+
+            List<Cell[]> rows = new List<Cell[]>();
+            for (int i = 0; i < editGrid.GetLength(0); i++)
+            {
+                Cell[] row = new Cell[editGrid.GetLength(1)];
+                for (int j = 0; j < editGrid.GetLength(1); j++)
+                {
+                    row[j] = editGrid[i, j];
+                }
+                rows.Add(row);
+            }
+
+            string jsonString = JsonSerializer.Serialize(rows);
+            File.WriteAllText(fileName + ".json", jsonString);
+        }
+
+        /// <summary>
+        /// Ladda in ett Cell objekt from en text fil
+        /// </summary>
+        /// <param name="fileName">Filens namn utan ".jason"</param>
+        /// <returns>Returnerar ett cell objekt</returns>
+        static Cell[,] LoadFromFile(string fileName)
+        {
+            string jsonString = File.ReadAllText(fileName + ".json");
+
+            List<Cell[]> rows = JsonSerializer.Deserialize<List<Cell[]>>(jsonString);
+            Cell[,] grid = new Cell[rows.Count, rows[0].Length];
+            for (int i = 0; i < rows.Count; i++)
+            {
+                for (int j = 0; j < rows[i].Length; j++)
+                {
+                    grid[i, j] = rows[i][j];
+                }
+            }
+
+            return grid;
+        }
 
     }
 }
